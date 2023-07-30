@@ -8,6 +8,11 @@ export interface Database {
   tracks: Track[];
   artists: Artist[];
   albums: Album[];
+  favorites: {
+    artists: string[];
+    albums: string[];
+    tracks: string[];
+  };
 }
 
 export const database: Database = {
@@ -15,4 +20,9 @@ export const database: Database = {
   tracks: [],
   artists: [],
   albums: [],
+  favorites: {
+    artists: [],
+    albums: [],
+    tracks: [],
+  },
 };
