@@ -83,6 +83,14 @@ export class ArtistService {
         track.artistId = null;
       }
     });
+    database.albums.forEach((album) => {
+      if (album.artistId === id) {
+        album.artistId = null;
+      }
+    });
+    database.favorites.artists = database.favorites.artists.filter(
+      (artistId) => artistId !== id,
+    );
   }
 
   isValidArtistId(id: string): boolean {

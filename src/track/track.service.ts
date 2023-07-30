@@ -91,6 +91,10 @@ export class TrackService {
 
     const trackIndex = database.tracks.findIndex((track) => track.id === id);
 
+    database.favorites.tracks = database.favorites.tracks.filter(
+      (trackId) => trackId !== id,
+    );
+
     database.tracks.splice(trackIndex, 1);
   }
 
