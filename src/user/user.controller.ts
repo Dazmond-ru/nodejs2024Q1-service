@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -28,10 +27,8 @@ export class UserController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    if (!this.userService.isValidUserId(id)) {
-      throw new BadRequestException('Invalid userId');
-    }
     const user = this.userService.findOne(id);
+
     if (!user) {
       throw new NotFoundException('User not found');
     }

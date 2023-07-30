@@ -7,8 +7,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
 import { Artist } from './entities/artist.entity';
-import { isBoolean, isString, isUUID } from 'class-validator';
+import { isBoolean, isString } from 'class-validator';
 import { database } from 'src/database/database';
+import { isValidateUUID } from 'src/utils/isValidateUUID';
 
 @Injectable()
 export class ArtistService {
@@ -17,14 +18,12 @@ export class ArtistService {
   }
 
   findOne(id: string): Artist | undefined {
-    if (!this.isValidArtistId(id)) {
-      throw new BadRequestException('Invalid artistId');
-    }
+    isValidateUUID(id);
 
     const artist = database.artists.find((artist) => artist.id === id);
 
     if (!artist) {
-      throw new NotFoundException('Artist not found');
+      throw new NotFoundException('Artist was not found');
     }
 
     return artist;
@@ -46,20 +45,13 @@ export class ArtistService {
   }
 
   update(id: string, { name, grammy }: UpdateArtistDto): Artist {
-    if (!this.isValidArtistId(id)) {
-      throw new BadRequestException('Invalid artistId');
-    }
+    isValidateUUID(id);
 
     if (!name || !isString(name) || !isBoolean(grammy)) {
       throw new BadRequestException('Invalid dto');
     }
 
-    const artist = database.artists.find((artist) => artist.id === id);
-
-    if (!artist) {
-      throw new NotFoundException('Artist not found');
-    }
-
+    const artist = this.findOne(id);
     artist.name = name;
     artist.grammy = grammy;
 
@@ -67,33 +59,28 @@ export class ArtistService {
   }
 
   remove(id: string) {
-    const artist = this.findOne(id);
-
-    if (!artist) {
-      throw new NotFoundException('Artist not found');
-    }
+    this.findOne(id);
 
     const artistIndex = database.artists.findIndex(
       (artist) => artist.id === id,
     );
 
     database.artists.splice(artistIndex, 1);
+
     database.tracks.forEach((track) => {
       if (track.artistId === id) {
         track.artistId = null;
       }
     });
+
     database.albums.forEach((album) => {
       if (album.artistId === id) {
         album.artistId = null;
       }
     });
+
     database.favorites.artists = database.favorites.artists.filter(
       (artistId) => artistId !== id,
     );
-  }
-
-  isValidArtistId(id: string): boolean {
-    return isUUID(id, 'all');
   }
 }
