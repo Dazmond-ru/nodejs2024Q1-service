@@ -8,10 +8,11 @@ import {
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { User } from './entities/user.entity';
-import { isString, isUUID } from 'class-validator';
+import { isString } from 'class-validator';
 import { v4 as uuidv4 } from 'uuid';
 import { database } from 'src/database/database';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { isValidateUUID } from 'src/utils/isValidateUUID';
 
 @Injectable()
 export class UserService {
@@ -20,9 +21,7 @@ export class UserService {
   }
 
   findOne(id: string): User | undefined {
-    if (!this.isValidUserId(id)) {
-      throw new BadRequestException('Invalid userId');
-    }
+    isValidateUUID(id);
 
     const user = database.users.find((user) => user.id === id);
 
@@ -54,19 +53,13 @@ export class UserService {
   }
 
   update(id: string, { newPassword, oldPassword }: UpdateUserDto): User {
-    if (!this.isValidUserId(id)) {
-      throw new BadRequestException('Invalid userId');
-    }
+    isValidateUUID(id);
 
     if (!isString(newPassword)) {
       throw new BadRequestException('Invalid dto');
     }
 
-    const user = database.users.find((user) => user.id === id);
-
-    if (!user) {
-      throw new NotFoundException('User was not found');
-    }
+    const user = this.findOne(id);
 
     if (user.password !== oldPassword) {
       throw new ForbiddenException('Old password is wrong');
@@ -79,22 +72,10 @@ export class UserService {
   }
 
   remove(id: string) {
-    if (!this.isValidUserId(id)) {
-      throw new BadRequestException('Invalid userId');
-    }
-
-    const user = this.findOne(id);
-
-    if (!user) {
-      throw new NotFoundException('User was not found');
-    }
+    this.findOne(id);
 
     const userIndex = database.users.findIndex((user) => user.id === id);
 
     database.users.splice(userIndex, 1);
-  }
-
-  isValidUserId(id: string): boolean {
-    return isUUID(id, 'all');
   }
 }

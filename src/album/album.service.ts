@@ -3,51 +3,50 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { isString, isUUID } from 'class-validator';
+import { isString } from 'class-validator';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
 import { Album } from './entities/album.entity';
 import { database } from 'src/database/database';
+import { isValidateUUID } from 'src/utils/isValidateUUID';
 
 @Injectable()
 export class AlbumService {
-  create(createAlbumDto: CreateAlbumDto) {
-    if (!createAlbumDto.name || !createAlbumDto.year) {
-      throw new BadRequestException('Invalid dto');
-    }
-    const newAlbum: Album = {
-      id: uuidv4(),
-      name: createAlbumDto.name,
-      year: createAlbumDto.year,
-      artistId: createAlbumDto.artistId || null,
-    };
-    database.albums.push(newAlbum);
-    return newAlbum;
-  }
-
   findAll() {
     return database.albums;
   }
 
   findOne(id: string): Album {
-    if (!this.isValidAlbumId(id)) {
-      throw new BadRequestException('Invalid albumId');
-    }
+    isValidateUUID(id);
 
     const album = database.albums.find((album) => album.id === id);
 
     if (!album) {
-      throw new NotFoundException('Album not found');
+      throw new NotFoundException('Album was not found');
     }
 
     return album;
   }
 
-  update(id: string, { name, year, artistId }: UpdateAlbumDto) {
-    if (!this.isValidAlbumId(id)) {
-      throw new BadRequestException('Invalid albumId');
+  create({ name, year, artistId }: CreateAlbumDto) {
+    if (!name || !year) {
+      throw new BadRequestException('Invalid dto');
     }
+
+    const newAlbum: Album = {
+      id: uuidv4(),
+      name,
+      year,
+      artistId: artistId || null,
+    };
+
+    database.albums.push(newAlbum);
+    return newAlbum;
+  }
+
+  update(id: string, { name, year, artistId }: UpdateAlbumDto) {
+    isValidateUUID(id);
 
     if (!name || !year) {
       throw new BadRequestException('Invalid dto');
@@ -57,12 +56,7 @@ export class AlbumService {
       throw new BadRequestException('Invalid dto');
     }
 
-    const album = database.albums.find((album) => album.id === id);
-
-    if (!album) {
-      throw new NotFoundException('Album not found');
-    }
-
+    const album = this.findOne(id);
     album.name = name;
     album.year = year;
 
@@ -74,28 +68,20 @@ export class AlbumService {
   }
 
   remove(id: string) {
-    const album = this.findOne(id);
-
-    if (!album) {
-      throw new NotFoundException('Album not found');
-    }
+    this.findOne(id);
 
     const albumIndex = database.albums.findIndex((album) => album.id === id);
 
-    if (album) {
-      database.albums.splice(albumIndex, 1);
-      database.favorites.albums = database.favorites.albums.filter(
-        (albumId) => albumId !== id,
-      );
-      database.tracks.forEach((album) => {
-        if (album.albumId === id) {
-          album.albumId = null;
-        }
-      });
-    }
-  }
+    database.albums.splice(albumIndex, 1);
 
-  isValidAlbumId(id: string): boolean {
-    return isUUID(id, 'all');
+    database.tracks.forEach((album) => {
+      if (album.albumId === id) {
+        album.albumId = null;
+      }
+    });
+
+    database.favorites.albums = database.favorites.albums.filter(
+      (albumId) => albumId !== id,
+    );
   }
 }

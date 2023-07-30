@@ -7,8 +7,9 @@ import { CreateTrackDto } from './dto/create-track.dto';
 import { Track } from './entities/track.entity';
 import { v4 as uuidv4 } from 'uuid';
 import { database } from 'src/database/database';
-import { isString, isUUID } from 'class-validator';
+import { isString } from 'class-validator';
 import { UpdateTrackDto } from './dto/update-track.dto';
+import { isValidateUUID } from 'src/utils/isValidateUUID';
 
 @Injectable()
 export class TrackService {
@@ -17,9 +18,7 @@ export class TrackService {
   }
 
   findOne(id: string) {
-    if (!this.isValidTrackId(id)) {
-      throw new BadRequestException('Invalid trackId');
-    }
+    isValidateUUID(id);
 
     const track = database.tracks.find((track) => track.id === id);
 
@@ -48,9 +47,7 @@ export class TrackService {
   }
 
   update(id: string, { name, duration, artistId, albumId }: UpdateTrackDto) {
-    if (!this.isValidTrackId(id)) {
-      throw new BadRequestException('Invalid trackId');
-    }
+    isValidateUUID(id);
 
     if (!name || !duration) {
       throw new BadRequestException('Invalid dto');
@@ -64,41 +61,24 @@ export class TrackService {
       throw new BadRequestException('Invalid dto');
     }
 
-    const track = database.tracks.find((track) => track.id === id);
-
-    if (!track) {
-      throw new NotFoundException('Track was not found');
-    }
-
-    track.name = name || track.name;
-    track.duration = duration || track.duration;
-    track.artistId = artistId || track.artistId;
-    track.albumId = albumId || track.albumId;
+    const track = this.findOne(id);
+    track.name = name;
+    track.duration = duration;
+    track.artistId = artistId;
+    track.albumId = albumId;
 
     return track;
   }
 
   remove(id: string) {
-    if (!this.isValidTrackId(id)) {
-      throw new BadRequestException('Invalid trackId');
-    }
-
-    const track = this.findOne(id);
-
-    if (!track) {
-      throw new NotFoundException('Track was not found');
-    }
+    this.findOne(id);
 
     const trackIndex = database.tracks.findIndex((track) => track.id === id);
+
+    database.tracks.splice(trackIndex, 1);
 
     database.favorites.tracks = database.favorites.tracks.filter(
       (trackId) => trackId !== id,
     );
-
-    database.tracks.splice(trackIndex, 1);
-  }
-
-  isValidTrackId(id: string): boolean {
-    return isUUID(id, 'all');
   }
 }
