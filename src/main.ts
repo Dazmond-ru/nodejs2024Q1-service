@@ -2,8 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import * as dotenv from 'dotenv';
-import * as YAML from 'yamljs';
-import { SwaggerModule } from '@nestjs/swagger';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 dotenv.config();
 
@@ -13,10 +12,23 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe());
 
-  const apiSpec = YAML.load('doc/api.yaml');
-  const document = SwaggerModule.createDocument(app, apiSpec);
+  const config = new DocumentBuilder()
+    .setTitle('Home Library Service')
+    .setDescription('Home music library service OpenAPI 3.0')
+    .setVersion('1.0')
+    .addTag('Users')
+    .addTag('Tracks')
+    .addTag('Albums')
+    .addTag('Artists')
+    .addTag('Favs')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+
   SwaggerModule.setup('doc', app, document);
 
-  await app.listen(port);
+  await app.listen(port, () => {
+    console.log(`Server listen http://localhost:${port}`);
+  });
 }
 bootstrap();
