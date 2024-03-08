@@ -73,8 +73,7 @@ export class ArtistController {
     description: 'Request does not contain required fields',
   })
   create(@Body() createArtistDto: CreateArtistDto): Artist {
-    const newArtist = this.artistService.create(createArtistDto);
-    return newArtist;
+    return this.artistService.create(createArtistDto);
   }
 
   @Put(':id')
