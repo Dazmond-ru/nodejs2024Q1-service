@@ -13,7 +13,7 @@ git clone https://github.com/Dazmond-ru/nodejs2023Q2-service.git
 
 ## Navigate to the project directory
 ```
-cd nodejs2023Q2-service
+cd nodejs2024Q1-service
 ```
 
 ## Switch to the "dev" branch
