@@ -5,14 +5,15 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserEntity } from './entities/user.entity';
-import { plainToClass } from 'class-transformer';
 import { UpdateUserDto } from './dto/update-user.dto';
 import {
   ApiBadRequestResponse,
@@ -35,8 +36,8 @@ export class UserController {
     description: 'Users has been successfully fetched',
     type: [UserEntity],
   })
-  findAll(): Promise<UserEntity[]> {
-    return this.userService.findAll();
+  async findAll(): Promise<UserEntity[]> {
+    return await this.userService.findAll();
   }
 
   @Get(':id')
@@ -56,8 +57,8 @@ export class UserController {
   @ApiNotFoundResponse({
     description: 'User with given "id" does not exist',
   })
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(id);
+  async findOne(@Param('id') id: string): Promise<UserEntity> {
+    return await this.userService.findOne(id);
   }
 
   @Post()
@@ -73,8 +74,8 @@ export class UserController {
   @ApiBadRequestResponse({
     description: 'Request does not contain required fields',
   })
-  create(@Body() createUserDto: CreateUserDto): UserEntity {
-    return plainToClass(UserEntity, this.userService.create(createUserDto));
+  async create(@Body() createUserDto: CreateUserDto): Promise<UserEntity> {
+    return await this.userService.create(createUserDto);
   }
 
   @Put(':id')
@@ -95,8 +96,11 @@ export class UserController {
   @ApiNotFoundResponse({
     description: 'User with given "id" does not exist.',
   })
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return plainToClass(UserEntity, this.userService.update(id, updateUserDto));
+  async update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<UserEntity> {
+    return await this.userService.update(id, updateUserDto);
   }
 
   @Delete(':id')
@@ -116,7 +120,11 @@ export class UserController {
   @ApiNotFoundResponse({
     description: 'User with given "id" does not exist.',
   })
-  remove(@Param('id') id: string) {
-    this.userService.remove(id);
+  async remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+    const isUser = await this.userService.remove(id);
+
+    if (!isUser) {
+      throw new NotFoundException('User was not found');
+    }
   }
 }

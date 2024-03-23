@@ -46,17 +46,6 @@ export class UserService {
       );
     }
 
-    const existingUser = await this.prismaService.user.findUnique({
-      where: { login },
-    });
-
-    if (existingUser) {
-      throw new HttpException(
-        'User with this login already exists',
-        HttpStatus.CONFLICT,
-      );
-    }
-
     const newUser = await this.prismaService.user.create({
       data: { login, password },
     });
