@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Exclude } from 'class-transformer';
+import { User } from '../interfaces/user.interface';
 
-export class User {
+export class UserEntity implements User {
   @ApiProperty()
   id: string;
 

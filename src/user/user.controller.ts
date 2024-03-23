@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { User } from './entities/user.entity';
+import { UserEntity } from './entities/user.entity';
 import { plainToClass } from 'class-transformer';
 import { UpdateUserDto } from './dto/update-user.dto';
 import {
@@ -33,9 +33,9 @@ export class UserController {
   @Get()
   @ApiOkResponse({
     description: 'Users has been successfully fetched',
-    type: [User],
+    type: [UserEntity],
   })
-  findAll(): User[] {
+  findAll(): Promise<UserEntity[]> {
     return this.userService.findAll();
   }
 
@@ -48,7 +48,7 @@ export class UserController {
   })
   @ApiOkResponse({
     description: 'User has been successfully fetched',
-    type: User,
+    type: UserEntity,
   })
   @ApiBadRequestResponse({
     description: 'User with given "id" is invalid (not uuid)',
@@ -68,13 +68,13 @@ export class UserController {
   })
   @ApiCreatedResponse({
     description: 'User has been successfully created.',
-    type: User,
+    type: UserEntity,
   })
   @ApiBadRequestResponse({
     description: 'Request does not contain required fields',
   })
-  create(@Body() createUserDto: CreateUserDto): User {
-    return plainToClass(User, this.userService.create(createUserDto));
+  create(@Body() createUserDto: CreateUserDto): UserEntity {
+    return plainToClass(UserEntity, this.userService.create(createUserDto));
   }
 
   @Put(':id')
@@ -87,7 +87,7 @@ export class UserController {
   @ApiBody({ type: UpdateUserDto, description: 'A new password for the user' })
   @ApiOkResponse({
     description: 'User has been successfully updated',
-    type: User,
+    type: UserEntity,
   })
   @ApiBadRequestResponse({
     description: 'User with given "id" is invalid (not uuid).',
@@ -96,7 +96,7 @@ export class UserController {
     description: 'User with given "id" does not exist.',
   })
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return plainToClass(User, this.userService.update(id, updateUserDto));
+    return plainToClass(UserEntity, this.userService.update(id, updateUserDto));
   }
 
   @Delete(':id')

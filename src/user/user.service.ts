@@ -7,75 +7,119 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { User } from './entities/user.entity';
+import { UserEntity } from './entities/user.entity';
 import { isString } from 'class-validator';
-import { v4 as uuidv4 } from 'uuid';
-import { database } from 'src/database/database';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { isValidateUUID } from 'src/utils/isValidateUUID';
+import { PrismaService } from '../prisma.service';
+import { plainToClass } from 'class-transformer';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class UserService {
-  findAll() {
-    return database.users;
+  constructor(private readonly prismaService: PrismaService) {}
+  async findAll(): Promise<UserEntity[]> {
+    const users = await this.prismaService.user.findMany();
+
+    return users.map((user) => plainToClass(UserEntity, user));
   }
 
-  findOne(id: string): User | undefined {
+  async findOne(id: string): Promise<UserEntity | undefined> {
     isValidateUUID(id);
 
-    const user = database.users.find((user) => user.id === id);
+    const user = await this.prismaService.user.findUnique({
+      where: { id },
+    });
 
     if (!user) {
       throw new NotFoundException('User was not found');
     }
 
-    return user;
+    return plainToClass(UserEntity, user);
   }
 
-  create({ login, password }: CreateUserDto): User {
+  async create({ login, password }: CreateUserDto): Promise<UserEntity> {
     if (!isString(login) || !isString(password)) {
       throw new HttpException(
         'Login and password must be strings',
         HttpStatus.BAD_REQUEST,
       );
     }
-    const newUser: User = {
-      id: uuidv4(),
-      version: 1,
-      login,
-      password,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
 
-    database.users.push(newUser);
-    return newUser;
+    const existingUser = await this.prismaService.user.findUnique({
+      where: { login },
+    });
+
+    if (existingUser) {
+      throw new HttpException(
+        'User with this login already exists',
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    const newUser = await this.prismaService.user.create({
+      data: { login, password },
+    });
+
+    return plainToClass(UserEntity, newUser);
   }
 
-  update(id: string, { newPassword, oldPassword }: UpdateUserDto): User {
+  async update(
+    id: string,
+    { newPassword, oldPassword }: UpdateUserDto,
+  ): Promise<UserEntity> {
     isValidateUUID(id);
 
     if (!isString(newPassword)) {
       throw new BadRequestException('Invalid dto');
     }
 
-    const user = this.findOne(id);
+    const user = await this.prismaService.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User was not found');
+    }
 
     if (user.password !== oldPassword) {
       throw new ForbiddenException('Old password is wrong');
     }
 
-    user.password = newPassword;
-    user.version += 1;
-    user.updatedAt = Date.now();
-    return user;
+    try {
+      const updatedUser = await this.prismaService.user.update({
+        where: { id },
+        data: { version: user.version + 1, password: newPassword },
+      });
+
+      return plainToClass(UserEntity, updatedUser);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException('User was not found');
+      }
+
+      throw error;
+    }
   }
 
-  remove(id: string) {
-    this.findOne(id);
+  async remove(id: string): Promise<boolean> {
+    try {
+      await this.prismaService.user.delete({
+        where: { id },
+      });
+      return true;
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        return false;
+      }
 
-    const userIndex = database.users.findIndex((user) => user.id === id);
-
-    database.users.splice(userIndex, 1);
+      throw error;
+    }
   }
 }
