@@ -4,12 +4,12 @@ import { IsBoolean, IsNotEmpty, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateArtistDto extends PartialType(CreateArtistDto) {
-  @ApiProperty()
+  @ApiProperty({ required: true, example: 'Update Artist' })
   @IsString()
   @IsNotEmpty()
   name: string;
 
-  @ApiProperty()
+  @ApiProperty({ required: false, example: true })
   @IsBoolean()
   @IsNotEmpty()
   grammy: boolean;

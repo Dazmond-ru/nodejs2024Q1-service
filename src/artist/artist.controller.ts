@@ -5,13 +5,15 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
 } from '@nestjs/common';
 import { ArtistService } from './artist.service';
 import { CreateArtistDto } from './dto/create-artist.dto';
-import { Artist } from './entities/artist.entity';
+import { ArtistEntity } from './entities/artist.entity';
 import { UpdateArtistDto } from './dto/update-artist.dto';
 import {
   ApiBadRequestResponse,
@@ -32,10 +34,10 @@ export class ArtistController {
   @Get()
   @ApiOkResponse({
     description: 'Artists has been successfully fetched',
-    type: [Artist],
+    type: [ArtistEntity],
   })
-  findAll() {
-    return this.artistService.findAll();
+  async findAll(): Promise<ArtistEntity[]> {
+    return await this.artistService.findAll();
   }
 
   @Get(':id')
@@ -47,7 +49,7 @@ export class ArtistController {
   })
   @ApiOkResponse({
     description: 'Artist has been successfully fetched',
-    type: Artist,
+    type: ArtistEntity,
   })
   @ApiBadRequestResponse({
     description: 'Artist with given "id" is invalid (not uuid)',
@@ -55,8 +57,8 @@ export class ArtistController {
   @ApiNotFoundResponse({
     description: 'Artist with given "id" does not exist',
   })
-  findOne(@Param('id') id: string) {
-    return this.artistService.findOne(id);
+  async findOne(@Param('id') id: string): Promise<ArtistEntity> {
+    return await this.artistService.findOne(id);
   }
 
   @Post()
@@ -67,13 +69,15 @@ export class ArtistController {
   })
   @ApiCreatedResponse({
     description: 'The artist has been successfully created.',
-    type: Artist,
+    type: ArtistEntity,
   })
   @ApiBadRequestResponse({
     description: 'Request does not contain required fields',
   })
-  create(@Body() createArtistDto: CreateArtistDto): Artist {
-    return this.artistService.create(createArtistDto);
+  async create(
+    @Body() createArtistDto: CreateArtistDto,
+  ): Promise<ArtistEntity> {
+    return await this.artistService.create(createArtistDto);
   }
 
   @Put(':id')
@@ -90,7 +94,7 @@ export class ArtistController {
   })
   @ApiOkResponse({
     description: 'Artist has been successfully updated',
-    type: Artist,
+    type: ArtistEntity,
   })
   @ApiBadRequestResponse({
     description: 'Artist with given "id" is invalid (not uuid)',
@@ -98,11 +102,11 @@ export class ArtistController {
   @ApiNotFoundResponse({
     description: 'Artist with given "id" does not exist',
   })
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateArtistDto: UpdateArtistDto,
-  ): Artist {
-    return this.artistService.update(id, updateArtistDto);
+  ): Promise<ArtistEntity> {
+    return await this.artistService.update(id, updateArtistDto);
   }
 
   @Delete(':id')
@@ -122,7 +126,11 @@ export class ArtistController {
   @ApiNotFoundResponse({
     description: 'Artist with given "id" does not exist',
   })
-  remove(@Param('id') id: string) {
-    this.artistService.remove(id);
+  async remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+    const isArtist = await this.artistService.remove(id);
+
+    if (!isArtist) {
+      throw new NotFoundException('Artist not found');
+    }
   }
 }

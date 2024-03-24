@@ -3,84 +3,95 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { v4 as uuidv4 } from 'uuid';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
-import { Artist } from './entities/artist.entity';
+import { ArtistEntity } from './entities/artist.entity';
 import { isBoolean, isString } from 'class-validator';
-import { database } from 'src/database/database';
 import { isValidateUUID } from 'src/utils/isValidateUUID';
+import { PrismaService } from '../modules/prisma/prisma.service';
+import { plainToClass } from 'class-transformer';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ArtistService {
-  findAll() {
-    return database.artists;
+  constructor(private readonly prismaService: PrismaService) {}
+  async findAll(): Promise<ArtistEntity[]> {
+    const artists = await this.prismaService.artist.findMany();
+
+    return artists.map((artist) => plainToClass(ArtistEntity, artist));
   }
 
-  findOne(id: string): Artist | undefined {
+  async findOne(id: string): Promise<ArtistEntity | undefined> {
     isValidateUUID(id);
 
-    const artist = database.artists.find((artist) => artist.id === id);
+    const artist = await this.prismaService.artist.findUnique({
+      where: { id },
+    });
 
     if (!artist) {
       throw new NotFoundException('Artist was not found');
     }
 
-    return artist;
+    return plainToClass(ArtistEntity, artist);
   }
 
-  create({ name, grammy }: CreateArtistDto) {
+  async create({ name, grammy }: CreateArtistDto): Promise<ArtistEntity> {
     if (!name || !isString(name) || !isBoolean(grammy)) {
       throw new BadRequestException('Invalid dto');
     }
 
-    const newArtist: Artist = {
-      id: uuidv4(),
-      name,
-      grammy,
-    };
+    const newArtist = await this.prismaService.artist.create({
+      data: { name, grammy },
+    });
 
-    database.artists.push(newArtist);
-    return newArtist;
+    return plainToClass(ArtistEntity, newArtist);
   }
 
-  update(id: string, { name, grammy }: UpdateArtistDto): Artist {
+  async update(
+    id: string,
+    { name, grammy }: UpdateArtistDto,
+  ): Promise<ArtistEntity> {
     isValidateUUID(id);
 
     if (!name || !isString(name) || !isBoolean(grammy)) {
       throw new BadRequestException('Invalid dto');
     }
 
-    const artist = this.findOne(id);
-    artist.name = name;
-    artist.grammy = grammy;
+    try {
+      const updateArtist = await this.prismaService.artist.update({
+        where: { id },
+        data: { name, grammy },
+      });
 
-    return artist;
+      return plainToClass(ArtistEntity, updateArtist);
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2025'
+      ) {
+        throw new NotFoundException('Artist was not found');
+      }
+
+      throw err;
+    }
   }
 
-  remove(id: string) {
-    this.findOne(id);
+  async remove(id: string) {
+    try {
+      await this.prismaService.artist.delete({
+        where: { id },
+      });
 
-    const artistIndex = database.artists.findIndex(
-      (artist) => artist.id === id,
-    );
-
-    database.artists.splice(artistIndex, 1);
-
-    database.tracks.forEach((track) => {
-      if (track.artistId === id) {
-        track.artistId = null;
+      return true;
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2025'
+      ) {
+        return false;
       }
-    });
 
-    database.albums.forEach((album) => {
-      if (album.artistId === id) {
-        album.artistId = null;
-      }
-    });
-
-    database.favorites.artists = database.favorites.artists.filter(
-      (artistId) => artistId !== id,
-    );
+      throw err;
+    }
   }
 }

@@ -1,12 +1,9 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { Artist } from '../interfaces/artist.interface';
 
-export class Artist {
-  @ApiProperty()
+export class ArtistEntity implements Artist {
   id: string;
 
-  @ApiProperty()
   name: string;
 
-  @ApiProperty()
   grammy: boolean;
 }
