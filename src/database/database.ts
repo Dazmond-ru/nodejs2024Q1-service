@@ -1,11 +1,11 @@
 import { AlbumEntity } from 'src/album/entities/album.entity';
 import { ArtistEntity } from 'src/artist/entities/artist.entity';
-import { Track } from 'src/track/entities/track.entity';
+import { TrackEntity } from 'src/track/entities/track.entity';
 import { UserEntity } from 'src/user/entities/user.entity';
 
 export interface Database {
   users: UserEntity[];
-  tracks: Track[];
+  tracks: TrackEntity[];
   artists: ArtistEntity[];
   albums: AlbumEntity[];
   favorites: {

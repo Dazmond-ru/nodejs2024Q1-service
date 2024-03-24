@@ -4,49 +4,81 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateTrackDto } from './dto/create-track.dto';
-import { Track } from './entities/track.entity';
-import { v4 as uuidv4 } from 'uuid';
-import { database } from 'src/database/database';
+import { TrackEntity } from './entities/track.entity';
 import { isString } from 'class-validator';
 import { UpdateTrackDto } from './dto/update-track.dto';
 import { isValidateUUID } from 'src/utils/isValidateUUID';
+import { PrismaService } from '../modules/prisma/prisma.service';
+import { plainToClass } from 'class-transformer';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class TrackService {
-  findAll() {
-    return database.tracks;
+  constructor(private readonly prismaService: PrismaService) {}
+  async findAll(): Promise<TrackEntity[]> {
+    const tracks = await this.prismaService.track.findMany();
+
+    return tracks.map((track) => plainToClass(TrackEntity, track));
   }
 
-  findOne(id: string) {
+  async findOne(id: string): Promise<TrackEntity> {
     isValidateUUID(id);
 
-    const track = database.tracks.find((track) => track.id === id);
+    const track = await this.prismaService.track.findUnique({ where: { id } });
 
     if (!track) {
       throw new NotFoundException('Track was not found');
     }
 
-    return track;
+    return plainToClass(TrackEntity, track);
   }
 
-  create({ name, duration, artistId, albumId }: CreateTrackDto) {
+  async create({
+    name,
+    duration,
+    artistId,
+    albumId,
+  }: CreateTrackDto): Promise<TrackEntity> {
     if (!name || !duration) {
       throw new BadRequestException('Invalid dto');
     }
 
-    const newTrack: Track = {
-      id: uuidv4(),
-      name,
-      artistId: artistId || null,
-      albumId: albumId || null,
-      duration,
-    };
+    try {
+      const newTrack = await this.prismaService.track.create({
+        data: {
+          name,
+          duration,
+          artist: artistId !== null ? { connect: { id: artistId } } : undefined,
+          album: albumId !== null ? { connect: { id: albumId } } : undefined,
+        },
+      });
 
-    database.tracks.push(newTrack);
-    return newTrack;
+      return plainToClass(TrackEntity, newTrack);
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2025' &&
+        typeof err.meta.cause === 'string'
+      ) {
+        if (err.meta.cause.includes('Album')) {
+          throw new Error(
+            'Unknown albumId, entity with such id does not exists',
+          );
+        } else if (err.meta.cause.includes('Artist')) {
+          throw new Error(
+            'Unknown artistId, entity with such id does not exists',
+          );
+        }
+      }
+
+      throw err;
+    }
   }
 
-  update(id: string, { name, duration, artistId, albumId }: UpdateTrackDto) {
+  async update(
+    id: string,
+    { name, duration, artistId, albumId }: UpdateTrackDto,
+  ): Promise<TrackEntity> {
     isValidateUUID(id);
 
     if (!name || !duration) {
@@ -61,24 +93,55 @@ export class TrackService {
       throw new BadRequestException('Invalid dto');
     }
 
-    const track = this.findOne(id);
-    track.name = name;
-    track.duration = duration;
-    track.artistId = artistId;
-    track.albumId = albumId;
+    try {
+      const updatedTrack = await this.prismaService.track.update({
+        where: { id },
+        data: {
+          name,
+          duration,
+          artist: artistId !== null ? { connect: { id: artistId } } : undefined,
+          album: albumId !== null ? { connect: { id: albumId } } : undefined,
+        },
+      });
 
-    return track;
+      return plainToClass(TrackEntity, updatedTrack);
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2025' &&
+        typeof err.meta.cause === 'string'
+      ) {
+        if (err.meta.cause.includes('Album')) {
+          throw new Error(
+            'Unknown albumId, entity with such id does not exists',
+          );
+        } else if (err.meta.cause.includes('Artist')) {
+          throw new Error(
+            'Unknown artistId, entity with such id does not exists',
+          );
+        } else {
+          return null;
+        }
+      }
+
+      throw err;
+    }
   }
 
-  remove(id: string) {
-    this.findOne(id);
+  async remove(id: string) {
+    try {
+      await this.prismaService.track.delete({ where: { id } });
 
-    const trackIndex = database.tracks.findIndex((track) => track.id === id);
+      return true;
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2025'
+      ) {
+        return false;
+      }
 
-    database.tracks.splice(trackIndex, 1);
-
-    database.favorites.tracks = database.favorites.tracks.filter(
-      (trackId) => trackId !== id,
-    );
+      throw err;
+    }
   }
 }

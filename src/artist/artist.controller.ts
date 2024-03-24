@@ -130,7 +130,7 @@ export class ArtistController {
     const isArtist = await this.artistService.remove(id);
 
     if (!isArtist) {
-      throw new NotFoundException('Artist not found');
+      throw new NotFoundException('Artist was not found');
     }
   }
 }

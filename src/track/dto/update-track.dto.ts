@@ -3,19 +3,15 @@ import { CreateTrackDto } from './create-track.dto';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateTrackDto extends PartialType(CreateTrackDto) {
-  @ApiProperty()
+  @ApiProperty({ required: true, example: 'Update Track' })
   name: string;
 
-  @ApiProperty({
-    required: false,
-  })
+  @ApiProperty({ required: false, format: 'uuid', nullable: true })
   artistId: string | null;
 
-  @ApiProperty({
-    required: false,
-  })
+  @ApiProperty({ required: false, format: 'uuid', nullable: true })
   albumId: string | null;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Duration in seconds', example: 392 })
   duration: number;
 }

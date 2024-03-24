@@ -1,19 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateTrackDto {
-  @ApiProperty()
+  @ApiProperty({ required: true, example: 'New Track' })
   name: string;
 
-  @ApiProperty({
-    required: false,
-  })
+  @ApiProperty({ required: false, format: 'uuid', nullable: true })
   artistId: string | null;
 
-  @ApiProperty({
-    required: false,
-  })
+  @ApiProperty({ required: false, format: 'uuid', nullable: true })
   albumId: string | null;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Duration in seconds', example: 392 })
   duration: number;
 }

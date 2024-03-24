@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Param,
   Post,
   Put,
@@ -22,20 +23,20 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { Track } from './entities/track.entity';
+import { TrackEntity } from './entities/track.entity';
 
 @ApiTags('Tracks')
 @Controller('track')
 export class TrackController {
-  constructor(private readonly tracksService: TrackService) {}
+  constructor(private readonly trackService: TrackService) {}
 
   @Get()
   @ApiOkResponse({
     description: 'Tracks has been successfully fetched',
-    type: [Track],
+    type: [TrackEntity],
   })
-  findAll() {
-    return this.tracksService.findAll();
+  async findAll(): Promise<TrackEntity[]> {
+    return await this.trackService.findAll();
   }
 
   @Get(':id')
@@ -47,7 +48,7 @@ export class TrackController {
   })
   @ApiOkResponse({
     description: 'Track has been successfully fetched',
-    type: Track,
+    type: TrackEntity,
   })
   @ApiBadRequestResponse({
     description: 'Track with given "id" is invalid (not uuid)',
@@ -55,8 +56,8 @@ export class TrackController {
   @ApiNotFoundResponse({
     description: 'Track with given "id" does not exist',
   })
-  findOne(@Param('id') id: string) {
-    return this.tracksService.findOne(id);
+  async findOne(@Param('id') id: string): Promise<TrackEntity> {
+    return await this.trackService.findOne(id);
   }
 
   @Post()
@@ -67,13 +68,13 @@ export class TrackController {
   })
   @ApiCreatedResponse({
     description: 'Track has been successfully created.',
-    type: Track,
+    type: TrackEntity,
   })
   @ApiBadRequestResponse({
     description: 'Request does not contain required fields',
   })
-  create(@Body() createTrackDto: CreateTrackDto) {
-    return this.tracksService.create(createTrackDto);
+  async create(@Body() createTrackDto: CreateTrackDto): Promise<TrackEntity> {
+    return await this.trackService.create(createTrackDto);
   }
 
   @Put(':id')
@@ -89,7 +90,7 @@ export class TrackController {
   })
   @ApiOkResponse({
     description: 'Track has been successfully updated',
-    type: Track,
+    type: TrackEntity,
   })
   @ApiBadRequestResponse({
     description: 'Track with given "id" is invalid (not uuid)',
@@ -98,8 +99,11 @@ export class TrackController {
     description: 'Track with given "id" does not exist',
   })
   @HttpCode(HttpStatus.OK)
-  update(@Param('id') id: string, @Body() updateTrackDto: UpdateTrackDto) {
-    return this.tracksService.update(id, updateTrackDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateTrackDto: UpdateTrackDto,
+  ) {
+    return await this.trackService.update(id, updateTrackDto);
   }
 
   @Delete(':id')
@@ -119,7 +123,11 @@ export class TrackController {
     description: 'Track with given "id" does not exist',
   })
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string) {
-    this.tracksService.remove(id);
+  async remove(@Param('id') id: string) {
+    const isTrack = await this.trackService.remove(id);
+
+    if (!isTrack) {
+      throw new NotFoundException('Track was not found');
+    }
   }
 }
