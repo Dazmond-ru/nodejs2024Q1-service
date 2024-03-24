@@ -57,7 +57,9 @@ export class AlbumController {
   @ApiNotFoundResponse({
     description: 'Album with given "id" does not exist',
   })
-  async findOne(@Param('id') id: string): Promise<AlbumEntity> {
+  async findOne(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<AlbumEntity> {
     return await this.albumService.findOne(id);
   }
 
@@ -99,7 +101,7 @@ export class AlbumController {
   })
   @ApiNotFoundResponse({ description: 'Album with given "id" does not exist' })
   async update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateAlbumDto: UpdateAlbumDto,
   ): Promise<AlbumEntity> {
     return await this.albumService.update(id, updateAlbumDto);
@@ -120,7 +122,9 @@ export class AlbumController {
     description: 'Album with given "id" is invalid (not uuid)',
   })
   @ApiNotFoundResponse({ description: 'Album with given "id" does not exist' })
-  async remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+  async remove(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<void> {
     const isAlbum = await this.albumService.remove(id);
 
     if (!isAlbum) {

@@ -57,7 +57,9 @@ export class UserController {
   @ApiNotFoundResponse({
     description: 'User with given "id" does not exist',
   })
-  async findOne(@Param('id') id: string): Promise<UserEntity> {
+  async findOne(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<UserEntity> {
     return await this.userService.findOne(id);
   }
 
@@ -97,7 +99,7 @@ export class UserController {
     description: 'User with given "id" does not exist.',
   })
   async update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserEntity> {
     return await this.userService.update(id, updateUserDto);
@@ -120,7 +122,9 @@ export class UserController {
   @ApiNotFoundResponse({
     description: 'User with given "id" does not exist.',
   })
-  async remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+  async remove(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<void> {
     const isUser = await this.userService.remove(id);
 
     if (!isUser) {

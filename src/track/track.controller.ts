@@ -7,6 +7,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
 } from '@nestjs/common';
@@ -56,7 +57,9 @@ export class TrackController {
   @ApiNotFoundResponse({
     description: 'Track with given "id" does not exist',
   })
-  async findOne(@Param('id') id: string): Promise<TrackEntity> {
+  async findOne(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<TrackEntity> {
     return await this.trackService.findOne(id);
   }
 
@@ -100,10 +103,16 @@ export class TrackController {
   })
   @HttpCode(HttpStatus.OK)
   async update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateTrackDto: UpdateTrackDto,
-  ) {
-    return await this.trackService.update(id, updateTrackDto);
+  ): Promise<TrackEntity> {
+    const updatedTrack = await this.trackService.update(id, updateTrackDto);
+
+    if (!updatedTrack) {
+      throw new NotFoundException('Track was not found');
+    }
+
+    return updatedTrack;
   }
 
   @Delete(':id')
@@ -123,7 +132,9 @@ export class TrackController {
     description: 'Track with given "id" does not exist',
   })
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string) {
+  async remove(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<void> {
     const isTrack = await this.trackService.remove(id);
 
     if (!isTrack) {

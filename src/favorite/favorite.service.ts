@@ -1,12 +1,7 @@
-import {
-  Injectable,
-  NotFoundException,
-  UnprocessableEntityException,
-} from '@nestjs/common';
-import { database } from 'src/database/database';
+import { Injectable } from '@nestjs/common';
 import { isValidateUUID } from 'src/utils/isValidateUUID';
-import { PrismaService } from "../modules/prisma/prisma.service";
-import { Prisma } from "@prisma/client";
+import { PrismaService } from '../modules/prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class FavoriteService {
@@ -26,7 +21,7 @@ export class FavoriteService {
     };
   }
 
-  async addTrackToFavorites(trackId: string) {
+  async addTrackToFavorites(trackId: string): Promise<boolean> {
     isValidateUUID(trackId);
 
     try {
@@ -44,10 +39,9 @@ export class FavoriteService {
     }
   }
 
-  async removeTrack(trackId: string) {
+  async removeTrack(trackId: string): Promise<boolean> {
     try {
       await this.prismaService.trackFav.delete({ where: { trackId } });
-
       return true;
     } catch (err) {
       if (
@@ -61,12 +55,11 @@ export class FavoriteService {
     }
   }
 
-  async addAlbumToFavorites(albumId: string) {
+  async addAlbumToFavorites(albumId: string): Promise<boolean> {
     isValidateUUID(albumId);
 
     try {
       await this.prismaService.albumFav.create({ data: { albumId } });
-
       return true;
     } catch (err) {
       if (
@@ -80,10 +73,9 @@ export class FavoriteService {
     }
   }
 
-  async removeAlbum(albumId: string) {
+  async removeAlbum(albumId: string): Promise<boolean> {
     try {
       await this.prismaService.albumFav.delete({ where: { albumId } });
-
       return true;
     } catch (err) {
       if (
@@ -97,12 +89,11 @@ export class FavoriteService {
     }
   }
 
-  async addArtistToFavorites(artistId: string) {
+  async addArtistToFavorites(artistId: string): Promise<boolean> {
     isValidateUUID(artistId);
 
     try {
       await this.prismaService.artistFav.create({ data: { artistId } });
-
       return true;
     } catch (err) {
       if (
@@ -116,10 +107,9 @@ export class FavoriteService {
     }
   }
 
-  async removeArtist(artistId: string) {
+  async removeArtist(artistId: string): Promise<boolean> {
     try {
       await this.prismaService.artistFav.delete({ where: { artistId } });
-
       return true;
     } catch (err) {
       if (

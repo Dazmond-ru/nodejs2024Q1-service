@@ -57,7 +57,9 @@ export class ArtistController {
   @ApiNotFoundResponse({
     description: 'Artist with given "id" does not exist',
   })
-  async findOne(@Param('id') id: string): Promise<ArtistEntity> {
+  async findOne(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<ArtistEntity> {
     return await this.artistService.findOne(id);
   }
 
@@ -103,7 +105,7 @@ export class ArtistController {
     description: 'Artist with given "id" does not exist',
   })
   async update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateArtistDto: UpdateArtistDto,
   ): Promise<ArtistEntity> {
     return await this.artistService.update(id, updateArtistDto);
@@ -126,7 +128,9 @@ export class ArtistController {
   @ApiNotFoundResponse({
     description: 'Artist with given "id" does not exist',
   })
-  async remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+  async remove(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<void> {
     const isArtist = await this.artistService.remove(id);
 
     if (!isArtist) {
