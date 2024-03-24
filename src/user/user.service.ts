@@ -11,7 +11,7 @@ import { UserEntity } from './entities/user.entity';
 import { isString } from 'class-validator';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { isValidateUUID } from 'src/utils/isValidateUUID';
-import { PrismaService } from '../prisma.service';
+import { PrismaService } from '../modules/prisma/prisma.service';
 import { plainToClass } from 'class-transformer';
 import { Prisma } from '@prisma/client';
 

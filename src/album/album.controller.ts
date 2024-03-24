@@ -5,14 +5,16 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
 } from '@nestjs/common';
 import { AlbumService } from './album.service';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
-import { Album } from './entities/album.entity';
+import { AlbumEntity } from './entities/album.entity';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -32,10 +34,10 @@ export class AlbumController {
   @Get()
   @ApiOkResponse({
     description: 'Albums has been successfully fetched',
-    type: [Album],
+    type: [AlbumEntity],
   })
-  findAll(): Album[] {
-    return this.albumService.findAll();
+  async findAll(): Promise<AlbumEntity[]> {
+    return await this.albumService.findAll();
   }
 
   @Get(':id')
@@ -47,7 +49,7 @@ export class AlbumController {
   })
   @ApiOkResponse({
     description: 'Album has been successfully fetched',
-    type: Album,
+    type: AlbumEntity,
   })
   @ApiBadRequestResponse({
     description: 'Album with given "id" is invalid (not uuid)',
@@ -55,8 +57,8 @@ export class AlbumController {
   @ApiNotFoundResponse({
     description: 'Album with given "id" does not exist',
   })
-  findOne(@Param('id') id: string): Album {
-    return this.albumService.findOne(id);
+  async findOne(@Param('id') id: string): Promise<AlbumEntity> {
+    return await this.albumService.findOne(id);
   }
 
   @Post()
@@ -67,13 +69,13 @@ export class AlbumController {
   })
   @ApiCreatedResponse({
     description: 'The album has been successfully created.',
-    type: Album,
+    type: AlbumEntity,
   })
   @ApiBadRequestResponse({
     description: 'Request does not contain required fields',
   })
-  create(@Body() createAlbumDto: CreateAlbumDto): Album {
-    return this.albumService.create(createAlbumDto);
+  async create(@Body() createAlbumDto: CreateAlbumDto): Promise<AlbumEntity> {
+    return await this.albumService.create(createAlbumDto);
   }
 
   @Put(':id')
@@ -90,14 +92,17 @@ export class AlbumController {
   })
   @ApiOkResponse({
     description: 'Album has been successfully updated',
-    type: Album,
+    type: AlbumEntity,
   })
   @ApiBadRequestResponse({
     description: 'Album with given "id" is invalid (not uuid)',
   })
   @ApiNotFoundResponse({ description: 'Album with given "id" does not exist' })
-  update(@Param('id') id: string, @Body() updateAlbumDto: UpdateAlbumDto) {
-    return this.albumService.update(id, updateAlbumDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateAlbumDto: UpdateAlbumDto,
+  ): Promise<AlbumEntity> {
+    return await this.albumService.update(id, updateAlbumDto);
   }
 
   @Delete(':id')
@@ -115,7 +120,11 @@ export class AlbumController {
     description: 'Album with given "id" is invalid (not uuid)',
   })
   @ApiNotFoundResponse({ description: 'Album with given "id" does not exist' })
-  remove(@Param('id') id: string) {
-    this.albumService.remove(id);
+  async remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+    const isAlbum = await this.albumService.remove(id);
+
+    if (!isAlbum) {
+      throw new NotFoundException('Album was not found');
+    }
   }
 }

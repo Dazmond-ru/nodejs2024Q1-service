@@ -1,15 +1,11 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { Album } from '../interfaces/album.interface';
 
-export class Album {
-  @ApiProperty()
+export class AlbumEntity implements Album {
   id: string;
 
-  @ApiProperty()
   name: string;
 
-  @ApiProperty()
   year: number;
 
-  @ApiProperty()
   artistId: string | null;
 }

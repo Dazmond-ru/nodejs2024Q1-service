@@ -4,48 +4,61 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { isString } from 'class-validator';
-import { v4 as uuidv4 } from 'uuid';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
-import { Album } from './entities/album.entity';
-import { database } from 'src/database/database';
+import { AlbumEntity } from './entities/album.entity';
 import { isValidateUUID } from 'src/utils/isValidateUUID';
+import { PrismaService } from '../modules/prisma/prisma.service';
+import { plainToClass } from 'class-transformer';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class AlbumService {
-  findAll() {
-    return database.albums;
+  constructor(private readonly prismaService: PrismaService) {}
+  async findAll(): Promise<AlbumEntity[]> {
+    const albums = await this.prismaService.album.findMany();
+
+    return albums.map((album) => plainToClass(AlbumEntity, album));
   }
 
-  findOne(id: string): Album {
+  async findOne(id: string): Promise<AlbumEntity> {
     isValidateUUID(id);
 
-    const album = database.albums.find((album) => album.id === id);
+    const album = await this.prismaService.album.findUnique({ where: { id } });
 
     if (!album) {
       throw new NotFoundException('Album was not found');
     }
 
-    return album;
+    return plainToClass(AlbumEntity, album);
   }
 
-  create({ name, year, artistId }: CreateAlbumDto) {
+  async create({ name, year, artistId }: CreateAlbumDto): Promise<AlbumEntity> {
     if (!name || !year) {
       throw new BadRequestException('Invalid dto');
     }
 
-    const newAlbum: Album = {
-      id: uuidv4(),
-      name,
-      year,
-      artistId: artistId || null,
-    };
+    try {
+      const newAlbum = await this.prismaService.album.create({
+        data: { name, year, artistId: artistId || null },
+      });
 
-    database.albums.push(newAlbum);
-    return newAlbum;
+      return plainToClass(AlbumEntity, newAlbum);
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2003'
+      ) {
+        throw new Error(
+          'Unknown artistId, entity with such id does not exists',
+        );
+      }
+
+      throw err;
+    }
   }
 
-  update(id: string, { name, year, artistId }: UpdateAlbumDto) {
+  async update(id: string, { name, year, artistId }: UpdateAlbumDto) {
     isValidateUUID(id);
 
     if (!name || !year) {
@@ -56,32 +69,43 @@ export class AlbumService {
       throw new BadRequestException('Invalid dto');
     }
 
-    const album = this.findOne(id);
-    album.name = name;
-    album.year = year;
+    try {
+      const updatedAlbum = await this.prismaService.album.update({
+        where: { id },
+        data: { name, year, artistId },
+      });
 
-    if (artistId) {
-      album.artistId = artistId;
+      return plainToClass(AlbumEntity, updatedAlbum);
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        if (err.code === 'P2025') {
+          throw new NotFoundException('Album was not found');
+        } else if (err.code === 'P2003') {
+          throw new Error(
+            'Unknown artistId, entity with such id does not exists',
+          );
+        }
+      }
+
+      throw err;
     }
-
-    return album;
   }
 
-  remove(id: string) {
-    this.findOne(id);
-
-    const albumIndex = database.albums.findIndex((album) => album.id === id);
-
-    database.albums.splice(albumIndex, 1);
-
-    database.tracks.forEach((album) => {
-      if (album.albumId === id) {
-        album.albumId = null;
+  async remove(id: string) {
+    try {
+      await this.prismaService.album.delete({
+        where: { id },
+      });
+      return true;
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2025'
+      ) {
+        return false;
       }
-    });
 
-    database.favorites.albums = database.favorites.albums.filter(
-      (albumId) => albumId !== id,
-    );
+      throw err;
+    }
   }
 }
