@@ -16,9 +16,9 @@ git clone https://github.com/Dazmond-ru/nodejs2023Q2-service.git
 cd nodejs2024Q1-service
 ```
 
-## Switch to the "dev" branch
+## Switch to the "dev-2" branch
 ```
-git checkout dev
+git checkout dev-2
 ```
 
 ## Installing NPM modules
@@ -27,17 +27,29 @@ git checkout dev
 npm install
 ```
 
-## Running application
+## Create ".env" file
 
 ```
-npm start
+cp .env.example .env
 ```
 
-## OpenAPI documentation
+## Run "docker-compose"
 
-After starting the app on port (4000 as default) you can open
-in your browser OpenAPI documentation by typing http://localhost:4000/doc/.
-For more information about OpenAPI/Swagger please visit https://swagger.io/.
+```
+docker compose up -d
+```
+
+## Run prisma migration
+
+```
+npm run prisma:migrate
+```
+
+## Check size image
+
+```
+docker images
+```
 
 ## Testing
 
@@ -76,6 +88,12 @@ npm run lint
 ```
 npm run format
 ```
+
+## OpenAPI documentation
+
+After starting the app on port (4000 as default) you can open
+in your browser OpenAPI documentation by typing http://localhost:4000/doc/.
+For more information about OpenAPI/Swagger please visit https://swagger.io/.
 
 ### Debugging in VSCode
 
