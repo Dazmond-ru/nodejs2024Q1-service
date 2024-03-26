@@ -1,0 +1,51 @@
+version: '3'
+services:
+  api:
+    container_name: 'nodejs2024q1-api'
+    build:
+      dockerfile: Dockerfile
+      context: .
+      target: development
+    depends_on:
+      - postgres
+    volumes:
+      - ./src:/usr/src/app/src
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}?schema=public
+    command: npm run start:dev
+    ports:
+      - ${PORT}:${PORT}
+    networks:
+      - my_networks
+    restart: always
+
+  postgres:
+    container_name: 'nodejs2024q1-db'
+    build:
+      dockerfile: Dockerfile
+      context: ./src/database
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    networks:
+      - my_networks
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    restart: always
+volumes:
+  postgres:
+networks:
+  my_networks:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: ${SUBNET}
+
+
