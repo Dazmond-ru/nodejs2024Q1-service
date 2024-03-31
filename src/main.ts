@@ -31,27 +31,24 @@ async function bootstrap() {
 
   SwaggerModule.setup('doc', app, document);
 
-  await app.listen(port, () => {
-    console.log(`Server listen http://localhost:${port}`);
-  });
-
   process.on('uncaughtException', (error) => {
-    const errorData = {
+    loggingService.error(JSON.stringify({
       message: 'Uncaught Exception',
       trace: error.stack,
       statusCode: 500,
-    };
-    loggingService.error(JSON.stringify(errorData));
+    }));
   });
 
   process.on('unhandledRejection', (reason) => {
-    const errorData = {
+    loggingService.error(JSON.stringify({
       message: 'Unhandled Rejection',
       reason: reason instanceof Error ? reason.stack : reason,
       statusCode: 500,
-    };
+    }));
+  });
 
-    loggingService.error(JSON.stringify(errorData));
+  await app.listen(port, () => {
+    console.log(`Server listen http://localhost:${port}`);
   });
 }
 bootstrap();

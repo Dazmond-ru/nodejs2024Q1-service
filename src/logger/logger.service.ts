@@ -4,7 +4,8 @@ import * as os from 'os';
 
 @Injectable()
 export class CustomLogger implements LoggerService {
-  private readonly appLogLevel: LogLevel = (process.env.LOG_LEVEL as LogLevel) || 'verbose';
+  private readonly appLogLevel: LogLevel =
+    (process.env.LOG_LEVEL as LogLevel) || 'verbose';
   private readonly logFilePath = './logs/app_log.log';
   private readonly errFilePath = './logs/app_err.log';
   private readonly fileSize: number = parseInt(process.env.FILE_SIZE) || 1024;
@@ -58,7 +59,10 @@ export class CustomLogger implements LoggerService {
       }
 
       if (stats.size >= 1024 * this.fileSize) {
-        const rotatedFilePath = logFilePath.replace('.log', `_old_${Date.now()}.log`);
+        const rotatedFilePath = logFilePath.replace(
+          '.log',
+          `_old_${Date.now()}.log`,
+        );
         fs.rename(logFilePath, rotatedFilePath, (renameErr) => {
           if (renameErr) {
             console.error('Error rotating file:', renameErr);
@@ -68,7 +72,11 @@ export class CustomLogger implements LoggerService {
     });
   }
 
-  private formatMessage(timestamp: string, level: LogLevel, message: string): string {
+  private formatMessage(
+    timestamp: string,
+    level: LogLevel,
+    message: string,
+  ): string {
     return `${timestamp} ${level.toUpperCase()} ${message}`;
   }
 
@@ -89,12 +97,12 @@ export class CustomLogger implements LoggerService {
 
   private printToConsole(formattedMessage: string, level: LogLevel) {
     const colors = {
-        log: '\x1b[0m',
-        error: '\x1b[31m',
-        warn: '\x1b[33m',
-        debug: '\x1b[36m',
-        verbose: '\x1b[35m',
-        time: '\x1b[2m',
+      log: '\x1b[0m',
+      error: '\x1b[31m',
+      warn: '\x1b[33m',
+      debug: '\x1b[36m',
+      verbose: '\x1b[35m',
+      time: '\x1b[2m',
     };
     console[level](colors[level] + formattedMessage);
   }
