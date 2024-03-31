@@ -14,6 +14,7 @@ import { isValidateUUID } from 'src/utils/isValidateUUID';
 import { PrismaService } from '../modules/prisma/prisma.service';
 import { plainToClass } from 'class-transformer';
 import { Prisma } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -46,8 +47,13 @@ export class UserService {
       );
     }
 
+    const hashPassword = await bcrypt.hash(
+      password,
+      parseInt(process.env.CRYPT_SALT) || 10,
+    );
+
     const newUser = await this.prismaService.user.create({
-      data: { login, password },
+      data: { login, password: hashPassword },
     });
 
     return plainToClass(UserEntity, newUser);
@@ -75,10 +81,19 @@ export class UserService {
       throw new ForbiddenException('Old password is wrong');
     }
 
+    const isPasswordCorrect = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordCorrect) {
+      return;
+    }
+
+    const cryptSalt = process.env.CRYPT_SALT;
+    const rounds = parseInt(cryptSalt) || 10;
+    const hashPassword = await bcrypt.hash(newPassword, rounds);
+
     try {
       const updatedUser = await this.prismaService.user.update({
         where: { id },
-        data: { version: user.version + 1, password: newPassword },
+        data: { version: user.version + 1, password: hashPassword },
       });
 
       return plainToClass(UserEntity, updatedUser);
@@ -110,5 +125,10 @@ export class UserService {
 
       throw error;
     }
+  }
+
+  async getUserByLogin(login: string) {
+    const user = await this.prismaService.user.findUnique({ where: { login } });
+    return user;
   }
 }
