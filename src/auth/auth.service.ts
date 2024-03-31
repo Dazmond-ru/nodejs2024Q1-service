@@ -27,7 +27,7 @@ export class AuthService {
   }
 
   async login({ login, password }: CreateUserDto) {
-    const user = await this.usersService.findOneByLogin(login);
+    const user = await this.usersService.getUserByLogin(login);
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!user || !isPasswordValid) {
@@ -50,7 +50,7 @@ export class AuthService {
 
     return {
       accessToken: this.jwtService.sign(payload, accessTokenData),
-      refreshToken: this.jwtService.sign(payload, refreshTokenData)
+      refreshToken: this.jwtService.sign(payload, refreshTokenData),
     };
   }
 
@@ -78,10 +78,7 @@ export class AuthService {
       };
       return {
         accessToken: this.jwtService.sign(payload, accessTokenData),
-        refreshToken: this.jwtService.sign(
-          payload,
-          refreshTokenData,
-        )
+        refreshToken: this.jwtService.sign(payload, refreshTokenData),
       };
     } catch (error) {
       if (error instanceof JsonWebTokenError) {

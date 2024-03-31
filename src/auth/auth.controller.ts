@@ -4,21 +4,15 @@ import {
   Body,
   HttpException,
   HttpStatus,
-  HttpCode, ForbiddenException,
+  HttpCode,
+  ForbiddenException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../user/dto/create-user.dto';
 import { UserEntity } from '../user/entities/user.entity';
 import { AuthRefreshDto } from './dto/auth-refresh.dto';
 import { Public } from './decorators/decorator';
-import {
-  ApiBadRequestResponse,
-  ApiForbiddenResponse,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -55,7 +49,10 @@ export class AuthController {
     summary: 'Login',
     description: 'Logins a user and returns access & refresh tokens',
   })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Successful login with provided login and password' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Successful login with provided login and password',
+  })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
     description:
@@ -67,9 +64,8 @@ export class AuthController {
   })
   async login(@Body() loginUserDto: CreateUserDto) {
     try {
-      const { accessToken, refreshToken } = await this.authService.login(
-        loginUserDto,
-      );
+      const { accessToken, refreshToken } =
+        await this.authService.login(loginUserDto);
       return { accessToken, refreshToken };
     } catch (error) {
       throw new ForbiddenException('Incorrect login or password');
@@ -80,7 +76,7 @@ export class AuthController {
   @Public()
   @ApiOperation({
     summary: 'Refresh token',
-    description: 'Refreshes user\'s tokens',
+    description: "Refreshes user's tokens",
   })
   @ApiResponse({ status: HttpStatus.OK, description: 'Successful refresh.' })
   @ApiResponse({
