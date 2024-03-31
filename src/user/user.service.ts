@@ -47,16 +47,26 @@ export class UserService {
       );
     }
 
-    const hashPassword = await bcrypt.hash(
-      password,
-      parseInt(process.env.CRYPT_SALT) || 10,
-    );
+    try {
+      const cryptSalt = parseInt(process.env.CRYPT_SALT) || 10
+      const passwordHash = await bcrypt.hash(password, cryptSalt);
 
-    const newUser = await this.prismaService.user.create({
-      data: { login, password: hashPassword },
-    });
+      const newUser = await this.prismaService.user.create({
+        data: { login, password: passwordHash },
+      });
 
-    return plainToClass(UserEntity, newUser);
+      return plainToClass(UserEntity, newUser);
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        throw new Error(
+          `User ${login} already exists`,
+        );
+      }
+      throw err;
+    }
   }
 
   async update(
@@ -83,12 +93,11 @@ export class UserService {
 
     const isPasswordCorrect = await bcrypt.compare(oldPassword, user.password);
     if (!isPasswordCorrect) {
-      return;
+      throw new ForbiddenException('Password is wrong');
     }
 
-    const cryptSalt = process.env.CRYPT_SALT;
-    const rounds = parseInt(cryptSalt) || 10;
-    const hashPassword = await bcrypt.hash(newPassword, rounds);
+    const cryptSalt = parseInt(process.env.CRYPT_SALT) || 10
+    const hashPassword = await bcrypt.hash(newPassword, cryptSalt);
 
     try {
       const updatedUser = await this.prismaService.user.update({
@@ -97,15 +106,15 @@ export class UserService {
       });
 
       return plainToClass(UserEntity, updatedUser);
-    } catch (error) {
+    } catch (err) {
       if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2025'
       ) {
         throw new NotFoundException('User was not found');
       }
 
-      throw error;
+      throw err;
     }
   }
 
