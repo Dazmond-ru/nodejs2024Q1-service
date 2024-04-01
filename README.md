@@ -16,9 +16,9 @@ git clone https://github.com/Dazmond-ru/nodejs2023Q2-service.git
 cd nodejs2024Q1-service
 ```
 
-## Switch to the "dev-2" branch
+## Switch to the "dev-3" branch
 ```
-git checkout dev-2
+git checkout dev-3
 ```
 
 ## Installing NPM modules
@@ -45,38 +45,14 @@ docker compose up -d
 npm run prisma:migrate
 ```
 
-## Check size image
-
-```
-docker images
-```
-
 ## Testing
 
 **After application running open new terminal and enter:**
-
-To run all tests without authorization
-
-```
-npm run test
-```
-
-To run only one of all test suites
-
-```
-npm run test -- <path to suite>
-```
 
 To run all test with authorization
 
 ```
 npm run test:auth
-```
-
-To run only specific test suite with authorization
-
-```
-npm run test:auth -- <path to suite>
 ```
 
 ### Auto-fix and format
