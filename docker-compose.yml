@@ -10,6 +10,7 @@ services:
       - postgres
     volumes:
       - ./src:/usr/src/app/src
+      - app_logs:/usr/src/app/logs
     env_file:
       - .env
     environment:
@@ -37,9 +38,12 @@ services:
       - my_networks
     volumes:
       - postgres:/var/lib/postgresql/data
+      - postgres_logs:/var/log/postgresql
     restart: always
 volumes:
   postgres:
+  postgres_logs:
+  app_logs:
 networks:
   my_networks:
     driver: bridge
